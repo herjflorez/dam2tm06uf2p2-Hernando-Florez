@@ -18,12 +18,15 @@ import javax.persistence.Table;
 public class Bodega {
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	@Column(name = "id", unique = true, nullable = true)
 	private int id_bodega;
 	
 	@Column(name = "nombre")
 	private String nombre;
+	
+	@Column(name = "llena")
+	private boolean llena;
 	
 	@OneToMany
     @JoinColumn(name = "bodega_id")
