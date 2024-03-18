@@ -25,9 +25,6 @@ public class Bodega {
 	@Column(name = "nombre")
 	private String nombre;
 	
-	@Column(name = "llena")
-	private boolean llena;
-	
 	@OneToMany
     @JoinColumn(name = "bodega_id")
 	private List<Vid> vids;
