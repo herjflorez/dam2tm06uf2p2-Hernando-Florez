@@ -25,6 +25,9 @@ public class Bodega {
 	@Column(name = "nombre")
 	private String nombre;
 	
+	@Column(name = "llena")
+	private boolean llena;
+	
 	@OneToMany
     @JoinColumn(name = "bodega_id")
 	private List<Vid> vids;
@@ -34,6 +37,7 @@ public class Bodega {
 	public Bodega(String nombre) {
 		this.nombre = nombre;
 		this.vids = new ArrayList<>();
+		this.llena = false;
 	}
 
 	@Override
@@ -42,6 +46,7 @@ public class Bodega {
 	}
 
 	public List<Vid> getVids() {
+		this.llena = true;
 		return this.vids;
 	}
 	
