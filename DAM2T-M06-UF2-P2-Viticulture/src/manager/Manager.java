@@ -44,6 +44,7 @@ public class Manager {
 		getEntrada();
 		manageActions();
 		showAllCampos();
+		showCantidadVidByBodega();
 		session.close();
 	}
 
@@ -134,6 +135,19 @@ public class Manager {
 		}
 		tx.commit();
 	}
+	
+	private void showCantidadVidByBodega() {
+		tx = session.beginTransaction();
+		Query q = session.createQuery("select v from Vid v group by bodega_id");
+		List<Vid> list = q.list();
+		for (Vid v : list) {
+			System.out.println(v);
+		}
+		tx.commit();
+		
+	}
+	
+
 
 	
 }
