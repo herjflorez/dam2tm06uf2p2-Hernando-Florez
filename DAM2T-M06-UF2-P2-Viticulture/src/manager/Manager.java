@@ -79,6 +79,7 @@ public class Manager {
 
 	private void vendimia() {
 		this.b.getVids().addAll(this.c.getVids());
+		this.b.setLlena(true);
 		
 		tx = session.beginTransaction();
 		session.save(b);

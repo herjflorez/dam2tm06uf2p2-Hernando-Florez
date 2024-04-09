@@ -46,8 +46,17 @@ public class Bodega {
 	}
 
 	public List<Vid> getVids() {
-		this.llena = true;
 		return this.vids;
 	}
+
+	public boolean isLlena() {
+		return llena;
+	}
+
+	public void setLlena(boolean llena) {
+		this.llena = llena;
+	}
+	
+	
 	
 }
