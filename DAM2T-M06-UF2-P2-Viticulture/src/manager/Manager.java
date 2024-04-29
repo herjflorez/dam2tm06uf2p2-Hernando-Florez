@@ -2,12 +2,18 @@ package manager;
 import java.util.ArrayList;
 import java.util.List;
 
-
+import org.bson.Document;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.hibernate.boot.model.relational.Database;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.query.Query;
+
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 
 import model.Bodega;
 import model.Campo;
@@ -22,6 +28,11 @@ public class Manager {
 	private Transaction tx;
 	private Bodega b;
 	private Campo c;
+	
+	MongoDatabase mongoDatabase;
+	MongoCollection<Document> collection;
+	ArrayList<Entrada> inpunts;
+
 
 	private Manager () {
 		this.entradas = new ArrayList<>();
@@ -37,6 +48,11 @@ public class Manager {
 	private void createSession() {
 		org.hibernate.SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
     	session = sessionFactory.openSession();
+    	String uri = "mongodb://localhost:27017";
+        MongoClientURI mongoClientURI = new MongoClientURI(uri);
+        MongoClient mongoClient = new MongoClient(mongoClientURI);
+
+        mongoDatabase = mongoClient.getDatabase("dam2tm06uf2p2");
 	}
 
 	public void init() {
@@ -120,11 +136,23 @@ public class Manager {
 		
 	}
 
-	private void getEntrada() {
-		tx = session.beginTransaction();
-		Query q = session.createQuery("select e from Entrada e");
-		this.entradas.addAll(q.list());
-		tx.commit();
+	private ArrayList<Entrada> getEntrada() {
+//		tx = session.beginTransaction();
+//		Query q = session.createQuery("select e from Entrada e");
+//		this.entradas.addAll(q.list());
+//		tx.commit();
+		
+		MongoCollection<Document> collection = mongoDatabase.getCollection("Entrada");
+		
+		for(Document document : collection.find()) {
+			Entrada input = new Entrada();
+			input.setValor(document.getObjectId("_id").toString());
+			input.setInstruccion(document.getString("instruccion"));
+			inpunts.add(input);
+		}
+		System.out.println(inpunts);
+		return inpunts;
+		
 	}
 
 	private void showAllCampos() {

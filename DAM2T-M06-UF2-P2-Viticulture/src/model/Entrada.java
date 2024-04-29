@@ -18,6 +18,18 @@ public class Entrada {
 	@Column(name = "instruccion")
 	private String instruccion;
 	
+	public String getValor() {
+		return valor;
+	}
+
+	public void setValor(String valor) {
+		this.valor = valor;
+	}
+
+	public void setInstruccion(String instruccion) {
+		this.instruccion = instruccion;
+	}
+
 	public String getInstruccion() {
 		return this.instruccion;
 	}
