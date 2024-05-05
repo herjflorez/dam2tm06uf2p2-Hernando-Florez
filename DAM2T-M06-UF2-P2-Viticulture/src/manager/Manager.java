@@ -2,26 +2,41 @@ package manager;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.print.Doc;
 
+import org.bson.Document;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.hibernate.cfg.Configuration;
 import org.hibernate.query.Query;
+import org.w3c.dom.html.HTMLTableColElement;
+
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.result.UpdateResult;
 
 import model.Bodega;
 import model.Campo;
 import model.Entrada;
 import model.Vid;
+import net.bytebuddy.agent.builder.AgentBuilder.InitializationStrategy.SelfInjection.Split;
 import utils.TipoVid;
 
 public class Manager {
+	
 	private static Manager manager;
 	private ArrayList<Entrada> entradas;
 	private Session session;
 	private Transaction tx;
 	private Bodega b;
 	private Campo c;
+	
+	MongoCollection<Document> collection;
+	MongoDatabase database;
 
 	private Manager () {
 		this.entradas = new ArrayList<>();
@@ -35,8 +50,10 @@ public class Manager {
 	}
 	
 	private void createSession() {
-		org.hibernate.SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
-    	session = sessionFactory.openSession();
+		String URL = "mongodb://localhost:27017";
+		MongoClientURI mongoClientUrl = new MongoClientURI(URL);
+		MongoClient mongoClient = new MongoClient(mongoClientUrl);
+		database = mongoClient.getDatabase("dam2tm06uf2p2");
 	}
 
 	public void init() {
@@ -44,8 +61,8 @@ public class Manager {
 		getEntrada();
 		manageActions();
 		showAllCampos();
-		showCantidadVidByBodega();
-		session.close();
+//		showCantidadVidByBodega();
+//		session.close();
 	}
 
 	private void manageActions() {
@@ -62,9 +79,9 @@ public class Manager {
 					case "V":
 						addVid(entrada.getInstruccion().split(" "));
 						break;
-					case "#":
-						vendimia();
-						break;
+//					case "#":
+//						vendimia();
+//						break;
 					default:
 						System.out.println("Instruccion incorrecta");
 				}
@@ -88,53 +105,54 @@ public class Manager {
 	}
 
 	private void addVid(String[] split) {
-		Vid v = new Vid(TipoVid.valueOf(split[1].toUpperCase()), Integer.parseInt(split[2]));
-		tx = session.beginTransaction();
-		session.save(v);
+		collection = database.getCollection("campo");
+		Document lastcampo = collection.find().sort(new Document("_id", -1)).first();
 		
-		c.addVid(v);
-		session.save(c);
+		collection = database.getCollection("vid");
+		Document document = new Document().append("tipo", split[1]).append("cantidad", split[2]).append("campo", lastcampo);
+		collection.insertOne(document);
 		
-		tx.commit();
+		Document document2 = new Document().append("tipo", split[1]).append("cantidad", split[2]);
+		
+		collection = database.getCollection("campo");
+		
+		Document update = new Document("$push", new Document("vid", document2));
+		collection.updateOne(lastcampo, update);
+		
 		
 	}
 
 	private void addCampo(String[] split) {
-		c = new Campo(b);
-		tx = session.beginTransaction();
+		collection = database.getCollection("bodega");
+		Document lastBodega = collection.find().sort(new Document("_id", -1)).first();
 		
-		int id = (Integer) session.save(c);
-		c = session.get(Campo.class, id);
-		
-		tx.commit();
+		collection = database.getCollection("campo");
+		Document document = new Document().append("name", lastBodega.getObjectId("_id")).append("collected", false).append("bodega", lastBodega);
+		collection.insertOne(document);
 	}
 
-	private void addBodega(String[] split) {
-		b = new Bodega(split[1]);
-		tx = session.beginTransaction();
-		
-		int id = (Integer) session.save(b);
-		b = session.get(Bodega.class, id);
-		
-		tx.commit();
-		
+	private void addBodega(String[] strings) {
+		collection = database.getCollection("bodega");
+		Document document = new Document().append("name", strings[1]);
+		collection.insertOne(document);
 	}
 
-	private void getEntrada() {
-		tx = session.beginTransaction();
-		Query q = session.createQuery("select e from Entrada e");
-		this.entradas.addAll(q.list());
-		tx.commit();
+	public void getEntrada() {
+		collection = database.getCollection("entrada");
+		
+		for (Document document : collection.find()) {
+			Entrada input = new Entrada();
+			input.setInstruccion(document.getString("instruccion"));
+			entradas.add(input);
+		}
 	}
 
 	private void showAllCampos() {
-		tx = session.beginTransaction();
-		Query q = session.createQuery("select c from Campo c");
-		List<Campo> list = q.list();
-		for (Campo c : list) {
-			System.out.println(c);
+		collection = database.getCollection("campo");
+		
+		for(Document document : collection.find()) {
+			System.out.println(document);
 		}
-		tx.commit();
 	}
 	
 	private void showCantidadVidByBodega() {
